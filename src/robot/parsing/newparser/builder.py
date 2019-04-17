@@ -1,5 +1,6 @@
-from robot.utils import Utf8Reader
+import os
 
+from robot.utils import Utf8Reader
 from robot.parsing.vendor import yacc
 from robot.parsing.lexer import RobotFrameworkLexer
 
@@ -16,11 +17,14 @@ class Builder(object):
 
 class LexerWrapper(object):
 
-    def __init__(self, data):
+    def __init__(self, data, source):
+        self.curdir = os.path.dirname(source).replace('\\', '\\\\')
         lexer = RobotFrameworkLexer(data_only=True)
         lexer.input(data)
         self.tokens = lexer.get_tokens()
 
     def token(self):
         token = next(self.tokens, None)
+        if token and '${CURDIR}' in token.value:
+            token.value = token.value.replace('${CURDIR}', self.curdir)
         return token
