@@ -156,8 +156,10 @@ class RobotFrameworkParser(object):
         append_to_list_value(p)
 
     def p_variable(self, p):
-        'variable : VARIABLE arguments EOS'
-        p[0] = Variable(p[1], p[2])
+        '''variable : VARIABLE arguments EOS
+                    | VARIABLE EOS'''
+        arguments = p[2] if len(p) == 4 else []
+        p[0] = Variable(p[1], arguments)
 
     def p_testcase_section(self, p):
         '''testcase_section : TESTCASE_HEADER EOS tests'''
@@ -193,7 +195,6 @@ class RobotFrameworkParser(object):
         else:
             p[0] = Keyword(p[1], p[3])
 
-
     def p_body_items(self, p):
         '''body_items : body_item
                       | body_items body_item
@@ -220,17 +221,38 @@ class RobotFrameworkParser(object):
         '''step : assignments KEYWORD EOS
                 | assignments KEYWORD arguments EOS'''
         if len(p) == 4:
-            p[0] = KeywordCall(p[1], p[2], [])
+            p[0] = KeywordCall(p[1], p[2])
         else:
             p[0] = KeywordCall(p[1], p[2], p[3])
 
     def p_forloop(self, p):
-        '''forloop : FOR arguments FOR_SEPARATOR arguments EOS foritems END EOS'''
-        p[0] = ForLoop(p[3], p[2], p[4], p[6])
+        '''forloop : for_header for_body END EOS
+                   | for_header
+                   | for_header END EOS
+                   | END EOS'''
+        if len(p) == 3: # FIXME: Better way to handle dangling END
+            p[0] = KeywordCall(None, p[1])
+        else:
+            p[1].body = p[2] if len(p) == 5 else []
+            p[0] = p[1]
 
-    def p_foritems(self, p):
-        '''foritems : step
-                    | foritems step
+    def p_for_header(self, p):
+        '''for_header : FOR arguments FOR_SEPARATOR arguments EOS
+                      | FOR arguments FOR_SEPARATOR EOS
+                      | FOR arguments EOS
+                      | FOR EOS'''
+        if len(p) == 6:
+            p[0] = ForLoop(p[2], p[3], p[4])
+        elif len(p) == 5:
+            p[0] = ForLoop(p[2], p[3], [])
+        elif len(p) == 4:
+            p[0] = ForLoop(p[2], 'IN', [])
+        else:
+            p[0] = ForLoop([], 'IN', [])
+
+    def p_for_body(self, p):
+        '''for_body : step
+                    | for_body step
         '''
         append_to_list_value(p)
 
@@ -249,8 +271,11 @@ class RobotFrameworkParser(object):
         append_to_list_value(p)
 
     def p_error(self, e):
-        print(e)
+        if e:
+            print(e.type)
         print("Parse error:" + str(e))
+        # FIXME not a proper way to handle errors
+        #self.parser.errok()
 
 
 def append_to_list_value(p):

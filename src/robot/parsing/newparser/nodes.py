@@ -50,20 +50,20 @@ class Variable(Node):
 class KeywordCall(Node):
     _fields = ('assign', 'keyword', 'args')
 
-    def __init__(self, assign, keyword, args):
+    def __init__(self, assign, keyword, args=None):
         self.assign = assign
         self.keyword = keyword
-        self.args = args
+        self.args = args or []
 
 
 class ForLoop(Node):
-    _fields = ('flavor', 'variables', 'values', 'keyword_calls')
+    _fields = ('variables', 'flavor', 'values', 'body')
 
-    def __init__(self, flavor, variables, values, keyword_calls):
-        self.flavor = flavor
+    def __init__(self, variables, flavor, values, body=None):
         self.variables = variables
+        self.flavor = flavor
         self.values = values
-        self.keyword_calls = keyword_calls
+        self.body = body or []
 
 
 class TestCase(Node):

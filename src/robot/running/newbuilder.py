@@ -162,6 +162,9 @@ class KeywordBuilder(ast.NodeVisitor):
     def visit_TagsSetting(self, node):
         self.kw.tags = node.value
 
+    def visit_ReturnSetting(self, node):
+        self.kw.return_ = node.value
+
     def visit_KeywordCall(self, node):
         self.kw.keywords.create(name=node.keyword, args=node.args, assign=node.assign or [])
 
@@ -197,6 +200,7 @@ class TemplateBuilder(ast.NodeVisitor):
 
 
 class TestDefaults(object):
+
     def __init__(self):
         self.setup = None
         self.teardown = None
@@ -207,6 +211,7 @@ class TestDefaults(object):
 
 
 class TestSettings(object):
+
     def __init__(self, defaults):
         self.defaults = defaults
         self.setup = None
