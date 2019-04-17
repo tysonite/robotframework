@@ -314,15 +314,19 @@ class ForLoopLexer(StatementLexer):
 
     def lex(self, ctc):
         separator_seen = False
+        arguments_seen = False
         self.statement[0].type = Token.FOR
         for token in self.statement[1:]:
-            if self._is_separator(token.value) and not separator_seen:
+            if self._is_separator(token.value, arguments_seen, separator_seen):
                 token.type = Token.FOR_SEPARATOR
                 separator_seen = True
             else:
                 token.type = Token.ARGUMENT
+                arguments_seen = True
 
-    def _is_separator(self, value):
+    def _is_separator(self, value, arguments_seen, separator_seen):
+        if separator_seen or not arguments_seen:
+            return False
         return value in ('IN', 'IN RANGE', 'IN ENUMERATE', 'IN ZIP')
 
 
