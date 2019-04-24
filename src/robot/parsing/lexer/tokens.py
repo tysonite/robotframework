@@ -82,3 +82,13 @@ class Token(object):
 
 Token.DATA_TOKENS = [t for t in Token.__dict__
                      if t[0] != '_' and t not in Token.NON_DATA_TOKENS]
+
+
+class EOS(Token):
+
+    def __init__(self, lineno=-1, columnno=-1):
+        Token.__init__(self, Token.EOS, '', lineno, columnno)
+
+    @classmethod
+    def from_token(cls, token):
+        return EOS(token.lineno, token.columnno + len(token.value))

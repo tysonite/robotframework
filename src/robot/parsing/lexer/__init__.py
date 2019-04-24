@@ -18,7 +18,7 @@ from __future__ import print_function   # TODO: Remove once "main" is removed
 from .context import TestCaseFileContext
 from .lexers import TestCaseFileLexer
 from .splitter import Splitter
-from .tokens import Token
+from .tokens import EOS, Token
 
 
 class RobotFrameworkLexer(object):
@@ -46,21 +46,19 @@ class RobotFrameworkLexer(object):
         else:
             ignore = {Token.IGNORE}
         for statement in self._handle_old_for(self.statements):
-            name_eos = None
+            name_token = last_token = None
             for token in statement:
                 if token.type in ignore:
                     continue
-                if name_eos:
-                    yield name_eos
-                    name_eos = None
+                if name_token:
+                    yield EOS.from_token(name_token)
+                    name_token = None
                 if token.type == Token.NAME:
-                    name_eos = Token(Token.EOS,
-                                     lineno=token.lineno,
-                                     columnno=token.columnno + len(token.value))
+                    name_token = token
+                last_token = token
                 yield token
-            yield Token(Token.EOS,
-                        lineno=token.lineno,
-                        columnno=token.columnno + len(token.value))
+            if last_token:
+                yield EOS.from_token(last_token)
 
     def _handle_old_for(self, statements):
         end_statement = [Token(Token.END)]
