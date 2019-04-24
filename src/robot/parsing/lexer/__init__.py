@@ -46,9 +46,18 @@ class RobotFrameworkLexer(object):
         else:
             ignore = {Token.IGNORE}
         for statement in self._handle_old_for(self.statements):
+            name_eos = None
             for token in statement:
-                if token.type not in ignore:
-                    yield token
+                if token.type in ignore:
+                    continue
+                if name_eos:
+                    yield name_eos
+                    name_eos = None
+                if token.type == Token.NAME:
+                    name_eos = Token(Token.EOS,
+                                     lineno=token.lineno,
+                                     columnno=token.columnno + len(token.value))
+                yield token
             yield Token(Token.EOS,
                         lineno=token.lineno,
                         columnno=token.columnno + len(token.value))
