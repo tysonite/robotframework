@@ -311,7 +311,8 @@ class ForLoopLexer(StatementLexer):
     def handles(cls, statement):
         marker = statement[0].value
         return (marker == 'FOR' or
-                marker[0] == ':' and marker.lstrip(': ').upper() == 'FOR')
+                marker[0] == ':' and
+                marker.replace(':', '').replace(' ', '').upper() == 'FOR')
 
     def lex(self, ctc):
         separator_seen = False
