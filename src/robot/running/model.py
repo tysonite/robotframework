@@ -238,9 +238,9 @@ class Variable(object):
 
 class Timeout(object):
 
-    def __init__(self, value, message=None):
+    def __init__(self, value, *message):
         self.value = value
-        self.message = message
+        self.message = ' '.join(message)
 
     def __str__(self):
         return self.value

@@ -1,5 +1,6 @@
 import ast
 import os
+import re
 
 from robot.errors import DataError
 from robot.parsing import TEST_EXTENSIONS
@@ -16,16 +17,35 @@ def create_fixture(data, type):
     return Keyword(name=data[0], args=tuple(data[1:]), type=type)
 
 
+def join_doc(values):
+    return ''.join(doc(values))
+
+
+def doc(values):
+    for index, item in enumerate(values):
+        yield item
+        if index < len(values) - 1:
+            yield _joiner_based_on_eol_escapes(item)
+
+
+def _joiner_based_on_eol_escapes(item):
+    _end_of_line_escapes = re.compile(r'(\\+)n?$')
+    match = _end_of_line_escapes.search(item)
+    if match and len(match.group(1)) % 2 == 1:
+        return ''
+    return '\n'
+
+
 class SettingsBuilder(ast.NodeVisitor):
     def __init__(self, suite, test_defaults):
         self.suite = suite
         self.test_defaults = test_defaults
 
     def visit_DocumentationSetting(self, node):
-        self.suite.doc = "\n".join(node.value)
+        self.suite.doc = join_doc(node.value)
 
     def visit_MetadataSetting(self, node):
-        self.suite.metadata[node.name] = ' '.join(node.value)
+        self.suite.metadata[node.name] = join_doc(node.value)
 
     def visit_SuiteSetupSetting(self, node):
         self.suite.keywords.append(create_fixture(node.value, 'setup'))
@@ -45,7 +65,7 @@ class SettingsBuilder(ast.NodeVisitor):
     def visit_DefaultTagsSetting(self, node):
         self.test_defaults.default_tags = node.value
 
-    def visit_ForecTagsSetting(self, node):
+    def visit_ForceTagsSetting(self, node):
         self.test_defaults.force_tags = node.value
 
     def visit_TestTemplateSetting(self, node):
@@ -82,7 +102,10 @@ class SuiteBuilder(ast.NodeVisitor):
         KeywordBuilder(self.suite.resource).visit(node)
 
     def visit_Variable(self, node):
-        self.suite.resource.variables.create(name=node.name, value=node.value)
+        name = node.name
+        if node.name.endswith('='):
+            name = name[:-1].rstrip()
+        self.suite.resource.variables.create(name=name, value=node.value)
 
 
 class ResourceBuilder(ast.NodeVisitor):
@@ -104,6 +127,9 @@ class ResourceBuilder(ast.NodeVisitor):
     def visit_Variable(self, node):
         self.resource.variables.create(name=node.name, value=node.value)
 
+    def visit_DocumentationSetting(self, node):
+        self.resource.doc = join_doc(node.value)
+
 
 class TestCaseBuilder(ast.NodeVisitor):
 
@@ -118,15 +144,39 @@ class TestCaseBuilder(ast.NodeVisitor):
         self.settings.set_test_values(self.test)
         template = self.settings.get_template()
         if template:
-            TemplateBuilder(self.test, template[0]).visit(node)
+            self._set_template(self.test, template[0])
+            self.test.template = template[0]
+
+    def _set_template(self, parent, template):
+        for kw in parent.keywords:
+            if kw.type == kw.FOR_LOOP_TYPE:
+                self._set_template(kw, template)
+            else:
+                name, args = self._format_template(template, kw.args)
+                kw.name = name
+                kw.args = args
+
+    def _format_template(self, template, args):
+        iterator = VariableIterator(template, identifiers='$')
+        variables = len(iterator)
+        if not variables or variables != len(args):
+            return template, tuple(args)
+        temp = []
+        for before, variable, after in iterator:
+            temp.extend([before, args.pop(0)])
+        temp.append(after)
+        return ''.join(temp), ()
 
     def visit_ForLoop(self, node):
         for_loop = ForLoop(node.variables, node.values, node.flavor)
         ForLoopBuilder(for_loop).visit(node)
         self.test.keywords.append(for_loop)
 
+    def visit_TemplateArguments(self, node):
+        self.test.keywords.append(Keyword(args=node.args))
+
     def visit_DocumentationSetting(self, node):
-        self.test.doc = "\n".join(node.value)
+        self.test.doc = join_doc(node.value)
 
     def visit_SetupSetting(self, node):
         self.settings.setup = node.value
@@ -151,10 +201,16 @@ class KeywordBuilder(ast.NodeVisitor):
     def __init__(self, resource):
         self.resource = resource
         self.kw = None
+        self.teardown = None
 
     def visit_Keyword(self, node):
         self.kw = self.resource.keywords.create(name=node.name)
         self.generic_visit(node)
+        if self.teardown:
+            self.kw.keywords.append(create_fixture(self.teardown, 'teardown'))
+
+    def visit_DocumentationSetting(self, node):
+        self.kw.doc = join_doc(node.value)
 
     def visit_ArgumentsSetting(self, node):
         self.kw.args = node.value
@@ -165,8 +221,19 @@ class KeywordBuilder(ast.NodeVisitor):
     def visit_ReturnSetting(self, node):
         self.kw.return_ = node.value
 
+    def visit_TimeoutSetting(self, node):
+        self.kw.timeout = node.value
+
+    def visit_TeardownSetting(self, node):
+        self.teardown = node.value
+
     def visit_KeywordCall(self, node):
         self.kw.keywords.create(name=node.keyword, args=node.args, assign=node.assign or [])
+
+    def visit_ForLoop(self, node):
+        for_loop = ForLoop(node.variables, node.values, node.flavor)
+        ForLoopBuilder(for_loop).visit(node)
+        self.kw.keywords.append(for_loop)
 
 
 class ForLoopBuilder(ast.NodeVisitor):
@@ -176,27 +243,8 @@ class ForLoopBuilder(ast.NodeVisitor):
     def visit_KeywordCall(self, node):
         self.for_loop.keywords.create(name=node.keyword, args=node.args, assign=node.assign or [])
 
-
-class TemplateBuilder(ast.NodeVisitor):
-
-    def __init__(self, test, template):
-        self.test = test
-        self.template = template
-
     def visit_TemplateArguments(self, node):
-        template, args = self._format_template(self.template, node.args)
-        self.test.keywords.append(Keyword(name=template, args=args))
-
-    def _format_template(self, template, args):
-        iterator = VariableIterator(template, identifiers='$')
-        variables = len(iterator)
-        if not variables or variables != len(args):
-            return template, tuple(args)
-        temp = []
-        for before, variable, after in iterator:
-            temp.extend([before, args.pop(0)])
-        temp.append(after)
-        return ''.join(temp), ()
+        self.for_loop.keywords.append(Keyword(args=node.args))
 
 
 class TestDefaults(object):
@@ -242,7 +290,7 @@ class TestSettings(object):
     def set_timout(self, test):
         timeout = self.timeout or self.defaults.timeout
         if timeout:
-            test.timout = timeout
+            test.timeout = timeout
 
     def set_tags(self, test):
         default_tags = (self.tags or self.defaults.default_tags) or []

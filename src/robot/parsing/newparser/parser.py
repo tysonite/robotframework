@@ -119,24 +119,29 @@ class RobotFrameworkParser(object):
         p[0] = VariablesSetting(name, args)
 
     def p_setup(self, p):
-        '''setup_setting : SETUP arguments'''
-        p[0] = SetupSetting(p[2])
+        '''setup_setting : SETUP
+                         | SETUP arguments'''
+        p[0] = SetupSetting(p[2] if len(p) == 3 else None)
 
     def p_teardown(self, p):
-        '''teardown_setting : TEARDOWN arguments'''
-        p[0] = TeardownSetting(p[2])
+        '''teardown_setting : TEARDOWN
+                            | TEARDOWN arguments'''
+        p[0] = TeardownSetting(p[2] if len(p) == 3 else None)
 
     def p_template(self, p):
-        '''template_setting : TEMPLATE arguments'''
-        p[0] = TemplateSetting(p[2])
+        '''template_setting : TEMPLATE
+                            | TEMPLATE arguments'''
+        p[0] = TemplateSetting(p[2] if len(p) == 3 else None)
 
     def p_timeout(self, p):
-        '''timeout_setting : TIMEOUT arguments'''
-        p[0] = TimeoutSetting(p[2])
+        '''timeout_setting : TIMEOUT
+                           | TIMEOUT arguments'''
+        p[0] = TimeoutSetting(p[2] if len(p) == 3 else None)
 
     def p_tags(self, p):
-        '''tags_setting : TAGS arguments'''
-        p[0] = TagsSetting(p[2])
+        '''tags_setting : TAGS
+                        | TAGS arguments'''
+        p[0] = TagsSetting(p[2] if len(p) == 3 else None)
 
     def p_arguments_setting(self, p):
         '''arguments_setting : ARGUMENTS arguments'''
@@ -218,16 +223,18 @@ class RobotFrameworkParser(object):
             p[0] = KeywordCall(None, p[1], p[2])
 
     def p_step_with_assignment(self, p):
-        '''step : assignments KEYWORD EOS
+        '''step : assignments EOS
+                | assignments KEYWORD EOS
                 | assignments KEYWORD arguments EOS'''
-        if len(p) == 4:
+        if len(p) == 3:
+            p[0] = KeywordCall(p[1], None)
+        elif len(p) == 4:
             p[0] = KeywordCall(p[1], p[2])
         else:
             p[0] = KeywordCall(p[1], p[2], p[3])
 
     def p_forloop(self, p):
         '''forloop : for_header for_body END EOS
-                   | for_header
                    | for_header END EOS
                    | END EOS'''
         if len(p) == 3: # FIXME: Better way to handle dangling END
@@ -253,6 +260,8 @@ class RobotFrameworkParser(object):
     def p_for_body(self, p):
         '''for_body : step
                     | for_body step
+                    | templatearguments
+                    | for_body templatearguments
         '''
         append_to_list_value(p)
 
