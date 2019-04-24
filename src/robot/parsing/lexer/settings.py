@@ -44,6 +44,7 @@ class Settings(object):
 
 
 class TestCaseFileSettings(Settings):
+    # FIXME: Non-ASCII spaces
     names = (
         'DOCUMENTATION',
         'SUITE SETUP',

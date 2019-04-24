@@ -210,6 +210,7 @@ class VariableLexer(StatementLexer):
 
 
 class TestCaseSectionLexer(SectionLexer):
+    # FIXME: Non-ASCII spaces
     markers = ('Test Case', 'Test Cases', 'Task', 'Tasks')
 
     def lexer_classes(self):
@@ -327,6 +328,7 @@ class ForLoopLexer(StatementLexer):
     def _is_separator(self, value, arguments_seen, separator_seen):
         if separator_seen or not arguments_seen:
             return False
+        # FIXME: Non-ASCII spaces
         return value in ('IN', 'IN RANGE', 'IN ENUMERATE', 'IN ZIP')
 
 
