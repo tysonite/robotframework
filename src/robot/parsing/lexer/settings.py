@@ -22,7 +22,7 @@ class Settings(object):
     multi_use = ()
 
     def __init__(self):
-        self.settings = {n: False for n in self.names}
+        self.settings = {n: None for n in self.names}
 
     def tokenize(self, statement):
         name = self._format_name(statement[0].value)
@@ -36,7 +36,7 @@ class Settings(object):
         if self.settings[upper] and upper not in self.multi_use:
             return Token.ERROR
             raise ValueError("Setting '%s' allowed only once." % name)
-        self.settings[upper] = True
+        self.settings[upper] = statement[1:]
         return getattr(Token, upper.replace(' ', '_'))
 
     def _format_name(self, name):
