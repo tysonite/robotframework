@@ -4,7 +4,7 @@ import re
 
 from robot.errors import DataError
 from robot.parsing import TEST_EXTENSIONS
-from robot.parsing.newparser.builder import Builder
+from robot.parsing.newparser import builder
 from robot.model import SuiteNamePatterns
 from robot.running.model import TestSuite, Keyword, ForLoop, ResourceFile
 from robot.utils import abspath
@@ -347,6 +347,7 @@ class TestSuiteBuilder(object):
         return extensions
 
     def _parse_and_build(self, path, parent_defaults=None, include_suites=None, include_extensions=None):
+        path = abspath(path)
         name = format_name(path)
         if os.path.isdir(path):
             LOGGER.info("Parsing directory '%s'." % path)
@@ -370,14 +371,14 @@ class TestSuiteBuilder(object):
         suite = TestSuite(name=name, source=source)
         defaults = TestDefaults(parent_defaults)
         if data:
-            print(ast.dump(data))
+            #print(ast.dump(data))
             SettingsBuilder(suite, defaults).visit(data)
             SuiteBuilder(suite, defaults).visit(data)
         return suite, defaults
 
     def _parse(self, path):
         try:
-            return Builder().read(abspath(path))
+            return builder.get_test_case_file_ast(path)
         except DataError as err:
             raise DataError("Parsing '%s' failed: %s" % (path, err.message))
 
@@ -461,7 +462,7 @@ class ResourceFileBuilder(object):
 
     def build(self, path):
         resource = ResourceFile(source=path)
-        data = Builder().read(abspath(path))
+        data = builder.get_resource_file_ast(path)
         if data.sections:
             ResourceBuilder(resource).visit(data)
         else:

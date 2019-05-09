@@ -1,5 +1,6 @@
 from ast import AST
 
+
 class Node(AST):
     _fields = ()
 

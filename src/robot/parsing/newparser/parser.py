@@ -35,8 +35,7 @@ class RobotFrameworkParser(object):
     def p_setting_section(self, p):
         '''setting_section : SETTING_HEADER EOS
                            | SETTING_HEADER EOS settings'''
-        if len(p) == 4:
-            p[0] = SettingSection(p[3])
+        p[0] = SettingSection(p[3] if len(p) == 4 else [])
 
     def p_settings(self, p):
         '''settings : setting
@@ -152,8 +151,7 @@ class RobotFrameworkParser(object):
     def p_variable_section(self, p):
         '''variable_section : VARIABLE_HEADER EOS
                             | VARIABLE_HEADER EOS variables'''
-        if len(p) == 4:
-            p[0] = VariableSection(p[3])
+        p[0] = VariableSection(p[3] if len(p) == 4 else [])
 
     def p_variables(self, p):
         '''variables : variable
@@ -167,14 +165,12 @@ class RobotFrameworkParser(object):
     def p_testcase_section(self, p):
         '''testcase_section : TESTCASE_HEADER EOS
                             | TESTCASE_HEADER EOS tests'''
-        if len(p) == 4:
-            p[0] = TestCaseSection(p[3])
+        p[0] = TestCaseSection(p[3] if len(p) == 4 else [])
 
     def p_keyword_section(self, p):
         '''keyword_section : KEYWORD_HEADER EOS
                            | KEYWORD_HEADER EOS keywords'''
-        if len(p) == 4:
-            p[0] = KeywordSection(p[3])
+        p[0] = KeywordSection(p[3] if len(p) == 4 else [])
 
     def p_tests(self, p):
         '''tests : test

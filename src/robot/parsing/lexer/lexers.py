@@ -89,7 +89,7 @@ class BlockLexer(Lexer):
                 lexer.lex(ctx)
 
 
-class TestCaseFileLexer(BlockLexer):
+class FileLexer(BlockLexer):
 
     def lex(self, ctx):
         self._lex_with_priority(ctx, priority=SettingSectionLexer)
