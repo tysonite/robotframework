@@ -112,9 +112,19 @@ class TestCaseSettings(Settings):
 
     @property
     def template_set(self):
-        # FIXME: Should look at the values as well
-        return (self.settings['TEMPLATE'] or
-                self.parent.settings['TEST TEMPLATE'])
+        test_template = self.settings['TEMPLATE']
+        if self._has_override_value(test_template):
+            return False
+        parent_template = self.parent.settings['TEST TEMPLATE']
+        return self._has_value(test_template) or self._has_value(parent_template)
+
+    def _has_override_value(self, template):
+        if template is None:
+            return False
+        return template == [] or template[0].value.upper() == 'NONE'
+
+    def _has_value(self, template):
+        return template and template[0].value
 
 
 class KeywordSettings(Settings):
