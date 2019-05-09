@@ -77,7 +77,13 @@ class SettingsBuilder(ast.NodeVisitor):
         self.suite.resource.imports.create(type='Resource', name=node.name, args=tuple(node.args))
 
     def visit_LibrarySetting(self, node):
-        self.suite.resource.imports.create(type='Library', name=node.name, args=tuple(node.args))
+        args, alias = self._split_possible_alias(node.args)
+        self.suite.resource.imports.create(type='Library', name=node.name, args=args, alias=alias)
+
+    def _split_possible_alias(self, args):
+        if len(args) > 1 and args[-2] == 'WITH NAME':
+            return args[:-2], args[-1]
+        return args, None
 
     def visit_VariablesSetting(self, node):
         self.suite.resource.imports.create(type='Variables', name=node.name, args=tuple(node.args))
