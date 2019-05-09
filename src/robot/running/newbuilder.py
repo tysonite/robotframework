@@ -349,6 +349,7 @@ class TestSuiteBuilder(object):
     def _parse_and_build(self, path, parent_defaults=None, include_suites=None, include_extensions=None):
         name = format_name(path)
         if os.path.isdir(path):
+            LOGGER.info("Parsing directory '%s'." % path)
             include_suites = self._get_include_suites(path, include_suites)
             init_file, children = self._get_children(path, include_extensions, include_suites)
             defaults = parent_defaults
@@ -359,6 +360,7 @@ class TestSuiteBuilder(object):
             for c in children:
                 suite.suites.append(self._parse_and_build(c, defaults, include_suites, include_extensions))
         else:
+            LOGGER.info("Parsing file '%s'." % path)
             suite, _ = self._build_suite(path, name, parent_defaults)
         suite.remove_empty_suites()
         return suite
@@ -460,8 +462,10 @@ class ResourceFileBuilder(object):
     def build(self, path):
         resource = ResourceFile(source=path)
         data = Builder().read(abspath(path))
-        if data:
+        if data.sections:
             ResourceBuilder(resource).visit(data)
+        else:
+            LOGGER.warn("Imported resource file '%s' is empty." % path)
         return resource
 
 
