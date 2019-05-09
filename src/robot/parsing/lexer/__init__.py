@@ -30,6 +30,8 @@ class RobotFrameworkLexer(object):
 
     def input(self, content):
         for statement in Splitter().split(content, data_only=self._data_only):
+            if not statement:
+                continue
             self.statements.append(statement)
             if self._data_only:
                 data = statement[:]
