@@ -214,25 +214,20 @@ class TestCaseSectionLexer(SectionLexer):
     markers = ('Test Case', 'Test Cases', 'Task', 'Tasks')
 
     def lexer_classes(self):
-        return (TestCaseSectionHeaderLexer, TestCaseLexer,
-                InvalidTestOrKeywordLexer)
+        return (TestCaseSectionHeaderLexer, TestCaseLexer)
 
 
 class KeywordSectionLexer(SettingSectionLexer):
     markers = ('Keyword', 'Keywords')
 
     def lexer_classes(self):
-        return (KeywordSectionHeaderLexer, KeywordLexer,
-                InvalidTestOrKeywordLexer)
+        return (KeywordSectionHeaderLexer, KeywordLexer)
 
 
 class TestOrKeywordLexer(BlockLexer):
     _in_for_loop = False
     _old_style_for = None
-
-    @classmethod
-    def handles(cls, statement):
-        return bool(statement[0].value)
+    _name_set = False
 
     def accepts_more(self, statement):
         return not statement[0].value
@@ -247,8 +242,9 @@ class TestOrKeywordLexer(BlockLexer):
 
     def _handle_name_or_indentation(self, statement):
         # TODO: Use dedicated lexers?
-        if statement[0].value:
+        if not self._name_set:
             statement.pop(0).type = Token.NAME
+            self._name_set = True
         while statement and not statement[0].value:
             statement.pop(0).type = Token.IGNORE
 
@@ -286,15 +282,6 @@ class KeywordLexer(TestOrKeywordLexer):
     def lex(self, ctx):
         ctx = ctx.keyword_context()
         TestOrKeywordLexer.lex(self, ctx)
-
-
-class InvalidTestOrKeywordLexer(BlockLexer):
-
-    def accepts_more(self, statement):
-        return not statement[0].value
-
-    def lexer_classes(self):
-        return (ErrorLexer,)
 
 
 class TestOrKeywordSettingLexer(SettingLexer):
