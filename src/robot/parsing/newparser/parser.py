@@ -15,8 +15,9 @@ class RobotFrameworkParser(object):
     tokens = Token.DATA_TOKENS
 
     def p_datafile(self, p):
-        '''datafile : sections'''
-        p[0] = DataFile(p[1])
+        '''datafile :
+                    | sections'''
+        p[0] = DataFile(p[1] if len(p) == 2 else [])
 
     def p_sections(self, p):
         '''sections : section
@@ -43,7 +44,7 @@ class RobotFrameworkParser(object):
         append_to_list_value(p)
 
     def p_setting(self, p):
-        '''setting : documentation_setting EOS
+        '''setting : documentation_setting
                    | suite_setup_setting EOS
                    | suite_teardown_setting EOS
                    | metadata_setting EOS
@@ -66,7 +67,7 @@ class RobotFrameworkParser(object):
         p[0] = p[1]
 
     def p_documentation(self, p):
-        '''documentation_setting : DOCUMENTATION arguments'''
+        '''documentation_setting : DOCUMENTATION arguments EOS'''
         p[0] = DocumentationSetting(p[2])
 
     def p_suite_setup(self, p):
@@ -121,29 +122,24 @@ class RobotFrameworkParser(object):
         p[0] = VariablesSetting(name, args)
 
     def p_setup(self, p):
-        '''setup_setting : SETUP
-                         | SETUP arguments'''
-        p[0] = SetupSetting(p[2] if len(p) == 3 else None)
+        '''setup_setting : SETUP arguments'''
+        p[0] = SetupSetting(p[2])
 
     def p_teardown(self, p):
-        '''teardown_setting : TEARDOWN
-                            | TEARDOWN arguments'''
-        p[0] = TeardownSetting(p[2] if len(p) == 3 else None)
+        '''teardown_setting : TEARDOWN arguments'''
+        p[0] = TeardownSetting(p[2])
 
     def p_template(self, p):
-        '''template_setting : TEMPLATE
-                            | TEMPLATE arguments'''
-        p[0] = TemplateSetting(p[2] if len(p) == 3 else None)
+        '''template_setting : TEMPLATE arguments'''
+        p[0] = TemplateSetting(p[2])
 
     def p_timeout(self, p):
-        '''timeout_setting : TIMEOUT
-                           | TIMEOUT arguments'''
-        p[0] = TimeoutSetting(p[2] if len(p) == 3 else None)
+        '''timeout_setting : TIMEOUT arguments'''
+        p[0] = TimeoutSetting(p[2])
 
     def p_tags(self, p):
-        '''tags_setting : TAGS
-                        | TAGS arguments'''
-        p[0] = TagsSetting(p[2] if len(p) == 3 else None)
+        '''tags_setting : TAGS arguments'''
+        p[0] = TagsSetting(p[2])
 
     def p_arguments_setting(self, p):
         '''arguments_setting : ARGUMENTS arguments'''
@@ -161,14 +157,12 @@ class RobotFrameworkParser(object):
 
     def p_variables(self, p):
         '''variables : variable
-                    | variables variable'''
+                     | variables variable'''
         append_to_list_value(p)
 
     def p_variable(self, p):
-        '''variable : VARIABLE arguments EOS
-                    | VARIABLE EOS'''
-        arguments = p[2] if len(p) == 4 else []
-        p[0] = Variable(p[1], arguments)
+        '''variable : VARIABLE arguments EOS'''
+        p[0] = Variable(p[1], p[2])
 
     def p_testcase_section(self, p):
         '''testcase_section : TESTCASE_HEADER EOS
@@ -219,25 +213,19 @@ class RobotFrameworkParser(object):
                      | setting
                      | step
                      | templatearguments
+                     | invalid_forloop
         '''
         p[0] = p[1]
 
     def p_step(self, p):
-        '''step : KEYWORD EOS
-                | KEYWORD arguments EOS'''
-        if len(p) == 3:
-            p[0] = KeywordCall(None, p[1], [])
-        else:
-            p[0] = KeywordCall(None, p[1], p[2])
+        '''step : KEYWORD arguments EOS'''
+        p[0] = KeywordCall(None, p[1], p[2])
 
     def p_step_with_assignment(self, p):
         '''step : assignments EOS
-                | assignments KEYWORD EOS
                 | assignments KEYWORD arguments EOS'''
         if len(p) == 3:
             p[0] = KeywordCall(p[1], None)
-        elif len(p) == 4:
-            p[0] = KeywordCall(p[1], p[2])
         else:
             p[0] = KeywordCall(p[1], p[2], p[3])
 
@@ -253,17 +241,11 @@ class RobotFrameworkParser(object):
 
     def p_for_header(self, p):
         '''for_header : FOR arguments FOR_SEPARATOR arguments EOS
-                      | FOR arguments FOR_SEPARATOR EOS
-                      | FOR arguments EOS
-                      | FOR EOS'''
+                      | FOR arguments EOS'''
         if len(p) == 6:
             p[0] = ForLoop(p[2], p[3], p[4])
-        elif len(p) == 5:
-            p[0] = ForLoop(p[2], p[3], [])
-        elif len(p) == 4:
-            p[0] = ForLoop(p[2], 'IN', [])
         else:
-            p[0] = ForLoop([], 'IN', [])
+            p[0] = ForLoop(p[2], 'IN', [])
 
     def p_for_body(self, p):
         '''for_body : step
@@ -277,15 +259,29 @@ class RobotFrameworkParser(object):
         '''templatearguments : arguments EOS'''
         p[0] = TemplateArguments(p[1])
 
+    def p_invalid_for_loop(self, p):
+        '''invalid_forloop : for_header for_body'''
+        p[0] = p[1]
+
     def p_assignments(self, p):
         '''assignments : ASSIGN
-                     | assignments ASSIGN'''
+                       | assignments ASSIGN'''
         append_to_list_value(p)
 
     def p_arguments(self, p):
-        '''arguments : ARGUMENT
-                     | arguments ARGUMENT'''
+        '''arguments : args
+                     | empty_arg
+        '''
+        p[0] = p[1]
+
+    def p_args(self, p):
+        '''args : ARGUMENT
+                | arguments ARGUMENT'''
         append_to_list_value(p)
+
+    def p_empty_arg(self, p):
+        '''empty_arg : '''
+        p[0] = []
 
     def p_error(self, e):
         if e:
@@ -296,11 +292,14 @@ class RobotFrameworkParser(object):
 
 
 def append_to_list_value(p):
-    if len(p) == 2:
+    if len(p) == 1:
+        p[0] = []
+    elif len(p) == 2:
         p[0] = [p[1]]
     else:
         value = p[1]
-        if (p[2]) is not None:
+        # TODO: IS this check needed??
+        if p[2] is not None:
             value.append(p[2])
         p[0] = value
 
