@@ -33,9 +33,13 @@ class RobotFrameworkParser(object):
         p[0] = p[1]
 
     def p_setting_section(self, p):
-        '''setting_section : SETTING_HEADER EOS
-                           | SETTING_HEADER EOS settings'''
+        '''setting_section : setting_header EOS
+                           | setting_header EOS settings'''
         p[0] = SettingSection(p[3] if len(p) == 4 else [])
+
+    def p_setting_header(self, p):
+        '''setting_header : SETTING_HEADER
+                           | setting_header SETTING_HEADER'''
 
     def p_settings(self, p):
         '''settings : setting
@@ -149,9 +153,13 @@ class RobotFrameworkParser(object):
         p[0] = ReturnSetting(p[2])
 
     def p_variable_section(self, p):
-        '''variable_section : VARIABLE_HEADER EOS
-                            | VARIABLE_HEADER EOS variables'''
+        '''variable_section : variable_header EOS
+                            | variable_header EOS variables'''
         p[0] = VariableSection(p[3] if len(p) == 4 else [])
+
+    def p_variable_header(self, p):
+        '''variable_header : VARIABLE_HEADER
+                           | variable_header VARIABLE_HEADER'''
 
     def p_variables(self, p):
         '''variables : variable
@@ -163,14 +171,22 @@ class RobotFrameworkParser(object):
         p[0] = Variable(p[1], p[2])
 
     def p_testcase_section(self, p):
-        '''testcase_section : TESTCASE_HEADER EOS
-                            | TESTCASE_HEADER EOS tests'''
+        '''testcase_section : testcase_header EOS
+                            | testcase_header EOS tests'''
         p[0] = TestCaseSection(p[3] if len(p) == 4 else [])
 
+    def p_testcase_header(self, p):
+        '''testcase_header : TESTCASE_HEADER
+                           | testcase_header TESTCASE_HEADER'''
+
     def p_keyword_section(self, p):
-        '''keyword_section : KEYWORD_HEADER EOS
-                           | KEYWORD_HEADER EOS keywords'''
+        '''keyword_section : keyword_header EOS
+                           | keyword_header EOS keywords'''
         p[0] = KeywordSection(p[3] if len(p) == 4 else [])
+
+    def p_keyword_header(self, p):
+        '''keyword_header : KEYWORD_HEADER
+                           | keyword_header KEYWORD_HEADER'''
 
     def p_tests(self, p):
         '''tests : test
