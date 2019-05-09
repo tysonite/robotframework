@@ -133,7 +133,10 @@ class ResourceBuilder(ast.NodeVisitor):
         KeywordBuilder(self.resource).visit(node)
 
     def visit_Variable(self, node):
-        self.resource.variables.create(name=node.name, value=node.value)
+        name = node.name
+        if node.name.endswith('='):
+            name = name[:-1].rstrip()
+        self.resource.variables.create(name=name, value=node.value)
 
     def visit_DocumentationSetting(self, node):
         self.resource.doc = join_doc(node.value)
