@@ -143,6 +143,20 @@ class CommentSectionHeaderLexer(SectionHeaderLexer):
     token_type = Token.COMMENT_HEADER
 
 
+class ErrorSectionHeaderLexer(SectionHeaderLexer):
+
+    def lex(self, ctx):
+        self.statement[0].type = Token.ERROR
+        self.statement[0].error = (
+            "Unrecognized table header '%s'. Available headers for data: "
+            "'Setting(s)', 'Variable(s)', 'Test Case(s)', 'Task(s)' and "
+            "'Keyword(s)'. Use 'Comment(s)' to embedded additional data."
+            % self.statement[0].value.strip('*').strip()
+        )
+        for token in self.statement[1:]:
+            token.type = Token.COMMENT
+
+
 class CommentSectionLexer(SectionLexer):
     markers = ('Comment', 'Comments')
 
@@ -171,11 +185,7 @@ class ErrorSectionLexer(SectionLexer):
         return statement[0].value.startswith('*')
 
     def lexer_classes(self):
-        return (ErrorLexer,)
-
-
-class ErrorLexer(StatementLexer):
-    token_type = Token.ERROR
+        return (ErrorSectionHeaderLexer, CommentLexer)
 
 
 class SettingSectionLexer(SectionLexer):
