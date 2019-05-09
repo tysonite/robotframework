@@ -14,7 +14,9 @@ from robot.utils import get_error_message, unic
 
 
 def create_fixture(data, type):
-    return Keyword(name=data[0], args=tuple(data[1:]), type=type)
+    if not data or data[0].upper() == 'NONE':
+        return None
+    return Keyword(name=data[0] if data else None, args=tuple(data[1:]), type=type)
 
 
 def join_doc(values):
@@ -48,10 +50,10 @@ class SettingsBuilder(ast.NodeVisitor):
         self.suite.metadata[node.name] = join_doc(node.value)
 
     def visit_SuiteSetupSetting(self, node):
-        self.suite.keywords.append(create_fixture(node.value, 'setup'))
+        self.suite.keywords.setup = create_fixture(node.value, 'setup')
 
     def visit_SuiteTeardownSetting(self, node):
-        self.suite.keywords.append(create_fixture(node.value, 'teardown'))
+        self.suite.keywords.teardown = create_fixture(node.value, 'teardown')
 
     def visit_TestSetupSetting(self, node):
         self.test_defaults.setup = node.value
@@ -151,7 +153,7 @@ class TestCaseBuilder(ast.NodeVisitor):
         for kw in parent.keywords:
             if kw.type == kw.FOR_LOOP_TYPE:
                 self._set_template(kw, template)
-            else:
+            elif kw.type == kw.KEYWORD_TYPE:
                 name, args = self._format_template(template, kw.args)
                 kw.name = name
                 kw.args = args
@@ -207,7 +209,7 @@ class KeywordBuilder(ast.NodeVisitor):
         self.kw = self.resource.keywords.create(name=node.name)
         self.generic_visit(node)
         if self.teardown:
-            self.kw.keywords.append(create_fixture(self.teardown, 'teardown'))
+            self.kw.keywords.teardown = create_fixture(self.teardown, 'teardown')
 
     def visit_DocumentationSetting(self, node):
         self.kw.doc = join_doc(node.value)
@@ -249,13 +251,27 @@ class ForLoopBuilder(ast.NodeVisitor):
 
 class TestDefaults(object):
 
-    def __init__(self):
+    def __init__(self, parent_defaults):
         self.setup = None
         self.teardown = None
         self.timeout = None
         self.force_tags = None
         self.default_tags = None
         self.test_template = None
+        self.parent_defaults = parent_defaults
+
+    def get_force_tags(self):
+        force_tags = self.force_tags or []
+        return force_tags + ((self.parent_defaults and self.parent_defaults.get_force_tags()) or [])
+
+    def get_setup(self):
+        return self.setup or (self.parent_defaults and self.parent_defaults.get_setup())
+
+    def get_teardown(self):
+        return self.teardown or (self.parent_defaults and self.parent_defaults.get_teardown())
+
+    def get_timeout(self):
+        return self.timeout or (self.parent_defaults and self.parent_defaults.get_timeout())
 
 
 class TestSettings(object):
@@ -269,7 +285,8 @@ class TestSettings(object):
         self.tags = None
 
     def get_template(self):
-        return self.template or self.defaults.test_template
+        template = self.template if self.template is not None else self.defaults.test_template
+        return template if template and template[0].upper() != 'NONE' else None
 
     def set_test_values(self, test):
         self.set_setup(test)
@@ -278,23 +295,23 @@ class TestSettings(object):
         self.set_tags(test)
 
     def set_setup(self, test):
-        setup = self.setup or self.defaults.setup
+        setup = self.setup or self.defaults.get_setup()
         if setup:
              test.keywords.setup = create_fixture(setup, type='setup')
 
     def set_teardown(self, test):
-        teardown = self.teardown or self.defaults.teardown
+        teardown = self.teardown or self.defaults.get_teardown()
         if teardown:
             test.keywords.teardown = create_fixture(teardown, type='teardown')
 
     def set_timout(self, test):
-        timeout = self.timeout or self.defaults.timeout
+        timeout = self.timeout or self.defaults.get_timeout()
         if timeout:
             test.timeout = timeout
 
     def set_tags(self, test):
         default_tags = (self.tags or self.defaults.default_tags) or []
-        test.tags = default_tags + (self.defaults.force_tags or [])
+        test.tags = default_tags + self.defaults.get_force_tags()
 
 
 class TestSuiteBuilder(object):
@@ -303,6 +320,8 @@ class TestSuiteBuilder(object):
 
     def __init__(self, include_suites=None, extension=None, rpa=None):
         self.rpa = rpa
+        self.include_suites = include_suites
+        self.extension = extension
 
     def build(self, *paths):
         """
@@ -312,7 +331,7 @@ class TestSuiteBuilder(object):
         if not paths:
             raise DataError('One or more source paths required.')
         if len(paths) == 1:
-            return self._parse_and_build(paths[0])
+            return self._parse_and_build(paths[0], include_suites=self.include_suites, include_extensions=self.extension)
         root = TestSuite()
         for path in paths:
             root.suites.append(self._parse_and_build(path))
@@ -327,27 +346,32 @@ class TestSuiteBuilder(object):
             raise DataError("Invalid extension to limit parsing '%s'." % extension)
         return extensions
 
-    def _parse_and_build(self, path):
+    def _parse_and_build(self, path, parent_defaults=None, include_suites=None, include_extensions=None):
+        name = format_name(path)
         if os.path.isdir(path):
-            init_file, children = self._get_children(path)
+            include_suites = self._get_include_suites(path, include_suites)
+            init_file, children = self._get_children(path, include_extensions, include_suites)
+            defaults = parent_defaults
             if init_file:
-                suite = self._build_suite(init_file)
+                suite, defaults = self._build_suite(init_file, name, parent_defaults)
             else:
-                suite = TestSuite(name=format_name(path), source=path)
+                suite = TestSuite(name=name, source=path)
             for c in children:
-                suite.suites.append(self._parse_and_build(c))
+                suite.suites.append(self._parse_and_build(c, defaults, include_suites, include_extensions))
         else:
-            suite = self._build_suite(path)
+            suite, _ = self._build_suite(path, name, parent_defaults)
         suite.remove_empty_suites()
         return suite
 
-    def _build_suite(self, source, parent_defaults=None):
+    def _build_suite(self, source, name, parent_defaults):
         data = self._parse(source)
-        suite = TestSuite(name=format_name(source), source=source)
-        defaults = TestDefaults()
-        SettingsBuilder(suite, defaults).visit(data)
-        SuiteBuilder(suite, defaults).visit(data)
-        return suite
+        suite = TestSuite(name=name, source=source)
+        defaults = TestDefaults(parent_defaults)
+        if data:
+            print(ast.dump(data))
+            SettingsBuilder(suite, defaults).visit(data)
+            SuiteBuilder(suite, defaults).visit(data)
+        return suite, defaults
 
     def _parse(self, path):
         try:
@@ -436,7 +460,8 @@ class ResourceFileBuilder(object):
     def build(self, path):
         resource = ResourceFile(source=path)
         data = Builder().read(abspath(path))
-        ResourceBuilder(resource).visit(data)
+        if data:
+            ResourceBuilder(resource).visit(data)
         return resource
 
 
@@ -449,5 +474,8 @@ def format_name(source):
         name = name.replace('_', ' ').strip()
         return name.title() if name.islower() else name
 
-    basename = os.path.splitext(os.path.basename(source))[0]
+    if os.path.isdir(source):
+        basename = os.path.basename(source)
+    else:
+        basename = os.path.splitext(os.path.basename(source))[0]
     return format_name(basename)
