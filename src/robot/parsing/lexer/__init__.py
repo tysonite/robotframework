@@ -44,7 +44,7 @@ class RobotFrameworkLexer(object):
         if self._data_only:
             # TODO: Should whole statement be ignored if there's ERROR?
             ignore = {Token.IGNORE, Token.COMMENT_HEADER, Token.COMMENT,
-                      Token.ERROR, Token.OLD_FOR_INDENT}
+                      Token.OLD_FOR_INDENT}
         else:
             ignore = {Token.IGNORE}
         for statement in self._handle_old_for(self.statements):

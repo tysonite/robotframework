@@ -188,9 +188,7 @@ class SettingSectionLexer(SectionLexer):
 class SettingLexer(StatementLexer):
 
     def lex(self, ctx):
-        self.statement[0].type = ctx.tokenize_setting(self.statement)
-        for token in self.statement[1:]:
-            token.type = Token.ARGUMENT
+        ctx.lex_setting(self.statement)
 
 
 class VariableSectionLexer(SectionLexer):

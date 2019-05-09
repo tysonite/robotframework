@@ -21,8 +21,8 @@ class LexingContext(object):
     def __init__(self, settings=None):
         self.settings = settings
 
-    def tokenize_setting(self, statement):
-        return self.settings.tokenize(statement)
+    def lex_setting(self, statement):
+        self.settings.lex(statement)
 
     def test_case_context(self):
         return TestCaseContext(TestCaseSettings(self.settings))

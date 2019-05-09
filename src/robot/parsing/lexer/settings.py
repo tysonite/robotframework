@@ -24,20 +24,34 @@ class Settings(object):
     def __init__(self):
         self.settings = {n: None for n in self.names}
 
-    def tokenize(self, statement):
-        name = self._format_name(statement[0].value)
-        upper = name.upper()    # TODO: Non-ASCII spaces
-        if upper in self.aliases:
-            upper = self.aliases[upper]
-        # TODO: Error reporting
-        if upper not in self.settings:
-            return Token.ERROR
-            raise ValueError("Invalid setting '%s'." % name)  # TODO: Hints?
-        if self.settings[upper] and upper not in self.multi_use:
-            return Token.ERROR
+    def lex(self, statement):
+        name_token = statement[0]
+        name = self._format_name(name_token.value)
+        normalized = self._normalize_name(name)
+        try:
+            self._validate(name, normalized, statement)
+        except ValueError as err:
+            name_token.type = Token.ERROR
+            name_token.error = err.args[0]
+        else:
+            name_token.type = getattr(Token, normalized.replace(' ', '_'))
+            self.settings[name.upper()] = statement[1:]
+        for token in statement[1:]:
+            token.type = Token.ARGUMENT
+
+    def _validate(self, name, normalized, statement):
+        if normalized not in self.settings:
+            raise ValueError("Non-existing setting '%s'." % name)  # TODO: Hints?
+        if self.settings[normalized] and normalized not in self.multi_use:
             raise ValueError("Setting '%s' allowed only once." % name)
-        self.settings[upper] = statement[1:]
-        return getattr(Token, upper.replace(' ', '_'))
+        if normalized == "RESOURCE" and len(statement) > 2:
+            raise ValueError("Setting '%s' accepts only one value." % name)
+
+    def _normalize_name(self, name):
+        upper = name.upper()  # TODO: Non-ASCII spaces
+        if upper in self.aliases:
+            return self.aliases[upper]
+        return upper
 
     def _format_name(self, name):
         return name
