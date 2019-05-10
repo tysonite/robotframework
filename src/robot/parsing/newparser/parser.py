@@ -173,11 +173,12 @@ class RobotFrameworkParser(object):
     def p_testcase_section(self, p):
         '''testcase_section : testcase_header EOS
                             | testcase_header EOS tests'''
-        p[0] = TestCaseSection(p[3] if len(p) == 4 else [])
+        p[0] = TestCaseSection(p[3] if len(p) == 4 else [], p[1])
 
     def p_testcase_header(self, p):
         '''testcase_header : TESTCASE_HEADER
                            | testcase_header TESTCASE_HEADER'''
+        append_to_list_value(p)
 
     def p_keyword_section(self, p):
         '''keyword_section : keyword_header EOS

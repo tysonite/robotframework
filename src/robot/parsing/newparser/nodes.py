@@ -29,8 +29,9 @@ class VariableSection(Node):
 class TestCaseSection(Node):
     _fields = ('tests',)
 
-    def __init__(self, tests):
+    def __init__(self, tests, header):
         self.tests = tests
+        self.header = header[0].strip("*").strip()
 
 
 class KeywordSection(Node):

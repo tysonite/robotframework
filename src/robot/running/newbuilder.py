@@ -5,12 +5,13 @@ import re
 from robot.errors import DataError
 from robot.parsing import TEST_EXTENSIONS
 from robot.parsing.newparser import builder
+from robot.parsing.newparser.nodes import TestCaseSection
 from robot.model import SuiteNamePatterns
 from robot.running.model import TestSuite, Keyword, ForLoop, ResourceFile
 from robot.utils import abspath
 from robot.variables import VariableIterator
 from robot.output import LOGGER
-from robot.utils import get_error_message, unic
+from robot.utils import normalize, unic
 
 
 def create_fixture(data, type):
@@ -329,6 +330,7 @@ class TestSuiteBuilder(object):
 
     def __init__(self, include_suites=None, extension=None, rpa=None):
         self.rpa = rpa
+        self._rpa_not_given = rpa is None
         self.include_suites = include_suites
         self.extension = extension
 
@@ -372,11 +374,15 @@ class TestSuiteBuilder(object):
         else:
             LOGGER.info("Parsing file '%s'." % path)
             suite, _ = self._build_suite(path, name, parent_defaults)
+        suite.rpa = self.rpa
         suite.remove_empty_suites()
         return suite
 
     def _build_suite(self, source, name, parent_defaults):
         data = self._parse(source)
+        test_section = self._get_test_section(data)
+        if self._rpa_not_given and test_section:
+            self._set_execution_mode(test_section, source)
         suite = TestSuite(name=name, source=source)
         defaults = TestDefaults(parent_defaults)
         if data:
@@ -384,6 +390,22 @@ class TestSuiteBuilder(object):
             SettingsBuilder(suite, defaults).visit(data)
             SuiteBuilder(suite, defaults).visit(data)
         return suite, defaults
+
+    def _get_test_section(self, data):
+        test_sections = [s for s in data.sections if isinstance(s, TestCaseSection)]
+        return test_sections[0] if test_sections else None
+
+    def _set_execution_mode(self, test_section, source):
+        rpa = test_section.header.lower() in ('task', 'tasks')
+        if self.rpa is None:
+            self.rpa = rpa
+        elif self.rpa is not rpa:
+            this, that = ('tasks', 'tests') if rpa else ('tests', 'tasks')
+            raise DataError("Conflicting execution modes. File '%s' has %s "
+                            "but files parsed earlier have %s. Fix headers "
+                            "or use '--rpa' or '--norpa' options to set the "
+                            "execution mode explicitly."
+                            % (source, this, that))
 
     def _parse(self, path):
         try:
