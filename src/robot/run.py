@@ -42,10 +42,7 @@ from robot.conf import RobotSettings
 from robot.model import ModelModifier
 from robot.output import LOGGER, pyloggingconf
 from robot.reporting import ResultWriter
-if os.getenv('NEWPARSER') is not None:
-    from robot.running.newbuilder import TestSuiteBuilder
-else:
-    from robot.running.builder import TestSuiteBuilder
+from robot.running.newbuilder import TestSuiteBuilder
 from robot.utils import Application, unic, text
 
 

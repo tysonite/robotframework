@@ -19,7 +19,7 @@ from robot.errors import DataError
 from robot.output import LOGGER
 from robot.utils import getshortdoc, is_string, unic
 
-from .builder import ResourceFileBuilder
+from .newbuilder import ResourceFileBuilder
 from .arguments import EmbeddedArguments, UserKeywordArgumentParser
 from .handlerstore import HandlerStore
 from .userkeywordrunner import UserKeywordRunner, EmbeddedArgumentsRunner

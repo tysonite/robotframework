@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# FIXME misleading maybe??
 """Implements test data parsing.
 
 Classes :class:`~.model.TestCaseFile`, :class:`~.model.TestDataDirectory`
@@ -48,20 +49,19 @@ Example
     print_suite(suite)
 """
 
-from .model import TestData, TestCaseFile, TestDataDirectory, ResourceFile
-from . import populators
 
-
-TEST_EXTENSIONS = set(populators.READERS)
+TEST_EXTENSIONS = {"robot", "txt", "tsv", "rest", "rst"}
 
 
 def disable_curdir_processing(method):
     """Decorator to disable processing `${CURDIR}` variable."""
     def decorated(*args, **kwargs):
-        original = populators.PROCESS_CURDIR
-        populators.PROCESS_CURDIR = False
-        try:
-            return method(*args, **kwargs)
-        finally:
-            populators.PROCESS_CURDIR = original
-    return decorated
+        pass
+        # FIXME
+        # original = populators.PROCESS_CURDIR
+        # populators.PROCESS_CURDIR = False
+        # try:
+        #     return method(*args, **kwargs)
+        # finally:
+        #     populators.PROCESS_CURDIR = original
+    return method
