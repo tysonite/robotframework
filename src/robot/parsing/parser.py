@@ -13,7 +13,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from .vendor import yacc
+
 from .lexer import Token
+from .lexerwrapper import LexerWrapper
 from .nodes import (
     DataFile, SettingSection, VariableSection, TestCaseSection,
     KeywordSection, Variable, DocumentationSetting, SuiteSetupSetting,
@@ -29,6 +32,13 @@ from .nodes import (
 class RobotFrameworkParser(object):
     tokens = Token.DATA_TOKENS
 
+    def __init__(self, lexer):
+        self.lexer = lexer
+
+    def parse(self, source):
+        parser = yacc.yacc(module=self)
+        return parser.parse(lexer=LexerWrapper(self.lexer, source))
+
     def p_datafile(self, p):
         '''datafile :
                     | sections'''
@@ -43,8 +53,7 @@ class RobotFrameworkParser(object):
         '''section : setting_section
                    | variable_section
                    | testcase_section
-                   | keyword_section
-        '''
+                   | keyword_section'''
         p[0] = p[1]
 
     def p_setting_section(self, p):
@@ -202,11 +211,11 @@ class RobotFrameworkParser(object):
 
     def p_keyword_header(self, p):
         '''keyword_header : KEYWORD_HEADER
-                           | keyword_header KEYWORD_HEADER'''
+                          | keyword_header KEYWORD_HEADER'''
 
     def p_tests(self, p):
         '''tests : test
-                | tests test'''
+                 | tests test'''
         append_to_list_value(p)
 
     def p_keywords(self, p):
@@ -216,7 +225,7 @@ class RobotFrameworkParser(object):
 
     def p_test(self, p):
         '''test : NAME EOS
-               | NAME EOS body_items'''
+                | NAME EOS body_items'''
         if len(p) == 3:
             p[0] = TestCase(p[1], [])
         else:
@@ -224,7 +233,7 @@ class RobotFrameworkParser(object):
 
     def p_keyword(self, p):
         '''keyword : NAME EOS
-                    | NAME EOS body_items'''
+                   | NAME EOS body_items'''
         if len(p) == 3:
             p[0] = Keyword(p[1], [])
         else:
@@ -232,8 +241,7 @@ class RobotFrameworkParser(object):
 
     def p_body_items(self, p):
         '''body_items : body_item
-                      | body_items body_item
-        '''
+                      | body_items body_item'''
         append_to_list_value(p)
 
     def p_body_item(self, p):
@@ -241,8 +249,7 @@ class RobotFrameworkParser(object):
                      | setting
                      | step
                      | templatearguments
-                     | invalid_forloop
-        '''
+                     | invalid_forloop'''
         p[0] = p[1]
 
     def p_step(self, p):
@@ -279,8 +286,7 @@ class RobotFrameworkParser(object):
         '''for_body : step
                     | for_body step
                     | templatearguments
-                    | for_body templatearguments
-        '''
+                    | for_body templatearguments'''
         append_to_list_value(p)
 
     def p_templatearguments(self, p):
@@ -298,8 +304,7 @@ class RobotFrameworkParser(object):
 
     def p_arguments(self, p):
         '''arguments : args
-                     | empty_arg
-        '''
+                     | empty_arg'''
         p[0] = p[1]
 
     def p_args(self, p):

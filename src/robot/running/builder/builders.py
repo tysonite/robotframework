@@ -17,8 +17,8 @@ import os
 
 from robot.errors import DataError
 from robot.output import LOGGER
-from robot.parsing import builder
-from robot.parsing.nodes import TestCaseSection #TODO: get rid of this
+from robot.parsing import (get_test_case_file_ast, get_resource_file_ast,
+                           TestCaseSection)
 from robot.utils import abspath
 
 from .testsettings import TestDefaults
@@ -54,7 +54,7 @@ class TestSuiteBuilder(object):
 class ResourceFileBuilder(object):
 
     def build(self, path):
-        data = builder.get_resource_file_ast(path)
+        data = get_resource_file_ast(path)
         return build_resource(data, path)
 
 
@@ -118,7 +118,7 @@ def build_suite(source, datapath=None, parent_defaults=None):
     suite = TestSuite(name=format_name(source), source=source)
     defaults = TestDefaults(parent_defaults)
     if datapath:
-        ast = builder.get_test_case_file_ast(datapath)
+        ast = get_test_case_file_ast(datapath)
         #print(ast.dump(ast))
         SettingsBuilder(suite, defaults).visit(ast)
         SuiteBuilder(suite, defaults).visit(ast)

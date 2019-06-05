@@ -49,8 +49,26 @@ Example
     print_suite(suite)
 """
 
+from robot.errors import DataError
 
+from .lexer import TestCaseFileLexer, ResourceFileLexer
+from .nodes import TestCaseSection
+from .parser import RobotFrameworkParser
+
+
+# TODO: remove/inline
 TEST_EXTENSIONS = {"robot", "txt", "tsv", "rest", "rst"}
+
+
+def get_test_case_file_ast(source):
+    return RobotFrameworkParser(TestCaseFileLexer()).parse(source)
+
+
+def get_resource_file_ast(source):
+    ast = RobotFrameworkParser(ResourceFileLexer()).parse(source)
+    if any(isinstance(s, TestCaseSection) for s in ast.sections):
+        raise DataError("Resource file '%s' cannot contain tests or tasks." % source)
+    return ast
 
 
 def disable_curdir_processing(method):

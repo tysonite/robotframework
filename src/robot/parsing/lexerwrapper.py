@@ -13,31 +13,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
+import os.path
 
-from robot.errors import DataError
 from robot.output import LOGGER
 from robot.utils import Utf8Reader
-
-from .lexer import TestCaseFileLexer, ResourceFileLexer
-from .nodes import TestCaseSection
-from .parser import RobotFrameworkParser
-from .vendor import yacc
-
-
-def get_test_case_file_ast(source):
-    lexer = TestCaseFileLexer()
-    parser = yacc.yacc(module=RobotFrameworkParser())
-    return parser.parse(lexer=LexerWrapper(lexer, source))
-
-
-def get_resource_file_ast(source):
-    lexer = ResourceFileLexer()
-    parser = yacc.yacc(module=RobotFrameworkParser())
-    ast = parser.parse(lexer=LexerWrapper(lexer, source))
-    if any(isinstance(s, TestCaseSection) for s in ast.sections):
-        raise DataError("Resource file '%s' cannot contain tests or tasks." % source)
-    return ast
 
 
 class LexerWrapper(object):
@@ -49,8 +28,8 @@ class LexerWrapper(object):
         self.tokens = lexer.get_tokens()
 
     def token(self):
+        """Adapter for yacc.yacc"""
         token = next(self.tokens, None)
-        # print(repr(token))
         if token and token.type == token.ERROR:
             self._report_error(token)
             return self._next_token_after_eos()
