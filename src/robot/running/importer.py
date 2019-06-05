@@ -21,7 +21,7 @@ from robot.output import LOGGER
 from robot.errors import FrameworkError
 from robot.utils import normpath, seq2str2, is_string
 
-from .newbuilder import ResourceFileBuilder
+from .builder import ResourceFileBuilder
 from .handlerstore import HandlerStore
 from .testlibraries import TestLibrary
 

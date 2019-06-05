@@ -42,7 +42,7 @@ from robot.conf import RobotSettings
 from robot.model import ModelModifier
 from robot.output import LOGGER, pyloggingconf
 from robot.reporting import ResultWriter
-from robot.running.newbuilder import TestSuiteBuilder
+from robot.running.builder import TestSuiteBuilder
 from robot.utils import Application, unic, text
 
 

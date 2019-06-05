@@ -35,7 +35,7 @@ class Settings(object):
             name_token.error = err.args[0]
         else:
             name_token.type = getattr(Token, normalized.replace(' ', '_'))
-            self.settings[name.upper()] = statement[1:]
+            self.settings[normalized] = statement[1:]
         for token in statement[1:]:
             token.type = Token.ARGUMENT
 
