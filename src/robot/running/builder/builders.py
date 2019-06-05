@@ -15,11 +15,11 @@
 
 import os
 
-from robot.parsing.newparser.nodes import TestCaseSection
 from robot.errors import DataError
-from robot.parsing.newparser import builder
-from robot.utils import abspath
 from robot.output import LOGGER
+from robot.parsing import builder
+from robot.parsing.nodes import TestCaseSection #TODO: get rid of this
+from robot.utils import abspath
 
 from .testsettings import TestDefaults
 from .transformers import SuiteBuilder, SettingsBuilder, ResourceBuilder
