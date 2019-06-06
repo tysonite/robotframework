@@ -20,6 +20,7 @@ class Settings(object):
     names = ()
     aliases = {}
     multi_use = ()
+    single_value = ()
 
     def __init__(self):
         self.settings = {n: None for n in self.names}
@@ -44,8 +45,9 @@ class Settings(object):
             raise ValueError("Non-existing setting '%s'." % name)  # TODO: Hints?
         if self.settings[normalized] and normalized not in self.multi_use:
             raise ValueError("Setting '%s' allowed only once." % name)
-        if normalized == "RESOURCE" and len(statement) > 2:
-            raise ValueError("Setting '%s' accepts only one value." % name)
+        if normalized in self.single_value and len(statement) > 2:
+            raise ValueError("Setting '%s' accepts only one value, got %s."
+                             % (name, len(statement) - 1))
 
     def _normalize_name(self, name):
         upper = name.upper()  # TODO: Non-ASCII spaces
@@ -86,6 +88,11 @@ class TestCaseFileSettings(Settings):
         'RESOURCE',
         'VARIABLES'
     )
+    single_value = (
+        'RESOURCE',
+        'TEST TIMEOUT',
+        'TEST TEMPLATE'
+    )
 
 
 # FIXME: Implementation missing. Need to check what settings are supported.
@@ -105,6 +112,9 @@ class ResourceFileSettings(Settings):
         'RESOURCE',
         'VARIABLES'
     )
+    single_value = (
+        'RESOURCE'
+    )
 
 
 class TestCaseSettings(Settings):
@@ -115,6 +125,10 @@ class TestCaseSettings(Settings):
         'TEMPLATE',
         'TIMEOUT',
         'TAGS'
+    )
+    single_value = (
+        'TIMEOUT',
+        'TEMPLATE'
     )
 
     def __init__(self, parent):
@@ -149,6 +163,9 @@ class KeywordSettings(Settings):
         'TIMEOUT',
         'TAGS',
         'RETURN'
+    )
+    single_value = (
+        'TIMEOUT'
     )
 
     def _format_name(self, name):

@@ -41,6 +41,13 @@ class Value(Node):
         self.value = value
 
 
+class SingleValue(Node):
+    _fields = ('value',)
+
+    def __init__(self, value):
+        self.value = value[0] if value and value[0].upper() != 'NONE' else None
+
+
 class DataFile(Node):
     _fields = ('sections',)
 
@@ -176,20 +183,14 @@ class SetupSetting(Fixture): pass
 class TeardownSetting(Fixture): pass
 
 
-class TestTemplateSetting(Value):
-
-    def __init__(self, value):
-        value = value[0] if value and value[0].upper() != 'NONE' else None
-        Value.__init__(self, value)
-
-
-class TemplateSetting(TestTemplateSetting): pass
+class TestTemplateSetting(SingleValue): pass
+class TemplateSetting(SingleValue): pass
+class TestTimeoutSetting(SingleValue): pass
+class TimeoutSetting(SingleValue): pass
 
 
-class TestTimeoutSetting(Value): pass
 class ForceTagsSetting(Value): pass
 class DefaultTagsSetting(Value): pass
-class TimeoutSetting(Value): pass
 class TagsSetting(Value): pass
 class ArgumentsSetting(Value): pass
 class ReturnSetting(Value): pass
