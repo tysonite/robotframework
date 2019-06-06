@@ -102,7 +102,7 @@ Empty Resource File
 
 Invalid Resource Import Parameters
     Stderr Should Contain Error    ${DATAFILE}
-    ...   Setting 'Resource' accepts only one value.
+    ...   Setting 'Resource' accepts only one value, got 2.
 
 Initialization file cannot be used as a resource file
     ${path} =  Normalize Path  ${DATADIR}/core/test_suite_dir_with_init_file/__init__.robot
