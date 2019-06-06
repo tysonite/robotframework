@@ -47,7 +47,7 @@ class TestSuiteBuilder(object):
         parser.parse(structure)
         suite = parser.suite
         suite.rpa = parser.rpa
-        suite.remove_empty_suites()
+        suite.remove_empty_suites(preserve_direct_children=len(paths) > 1)
         return suite
 
 
