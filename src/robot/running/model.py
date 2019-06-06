@@ -107,7 +107,7 @@ class TestSuite(model.TestSuite):
     test_class = TestCase    #: Internal usage only.
     keyword_class = Keyword  #: Internal usage only.
 
-    def __init__(self,  name='', doc='', metadata=None, source=None, rpa=False):
+    def __init__(self,  name='', doc='', metadata=None, source=None, rpa=None):
         model.TestSuite.__init__(self, name, doc, metadata, source, rpa)
         #: :class:`ResourceFile` instance containing imports, variables and
         #: keywords the suite owns. When data is parsed from the file system,
