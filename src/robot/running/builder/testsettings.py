@@ -37,7 +37,11 @@ class TestDefaults(object):
         return self.teardown or (self.parent_defaults and self.parent_defaults.get_teardown())
 
     def get_timeout(self):
-        return self.timeout or (self.parent_defaults and self.parent_defaults.get_timeout())
+        if self.timeout:
+            return self.timeout.value
+        if self.parent_defaults:
+            return self.parent_defaults.get_timeout()
+        return None
 
 
 class TestSettings(object):
@@ -68,7 +72,7 @@ class TestSettings(object):
 
     @property
     def timeout(self):
-        return self._timeout or self.defaults.get_timeout()
+        return self._timeout.value if self._timeout else self.defaults.get_timeout()
 
     @timeout.setter
     def timeout(self, timeout):

@@ -48,10 +48,10 @@ class SettingsBuilder(ast.NodeVisitor):
         self.test_defaults.teardown = node
 
     def visit_TestTimeoutSetting(self, node):
-        # TODO: should node be always given to test_defaults?
-        self.test_defaults.timeout = node.value
+        self.test_defaults.timeout = node
 
     def visit_DefaultTagsSetting(self, node):
+        # TODO: should node be always given to test_defaults?
         self.test_defaults.default_tags = node.value
 
     def visit_ForceTagsSetting(self, node):
@@ -199,7 +199,7 @@ class TestCaseBuilder(ast.NodeVisitor):
         self.settings.teardown = node
 
     def visit_TimeoutSetting(self, node):
-        self.settings.timeout = node.value
+        self.settings.timeout = node
 
     def visit_TagsSetting(self, node):
         self.settings.tags = node.value
