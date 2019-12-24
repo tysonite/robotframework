@@ -30,7 +30,7 @@ jobs:
 
       - name: Setup IronPython ${{ matrix.ironpython-version }}
         run: |
-          dotnet add package IronPython --version ${{ matrix.ironpython-version }}
+          Install-Package IronPython -Version ${{ matrix.ironpython-version }}
           ipy -m ensurepip --user
       
       - name: Run acceptance tests
