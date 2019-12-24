@@ -10,7 +10,7 @@ jobs:
       matrix:
         os: [ 'windows-latest' ]
         ironpython-version: [ '2.7.9', '2.7.10-candidate1' ]
-        dotnet: [ '2.0.3' ]
+        dotnet: [ '2.1.802' ]
 
     runs-on: ${{ matrix.os }}
 
@@ -30,7 +30,7 @@ jobs:
 
       - name: Setup IronPython ${{ matrix.ironpython-version }}
         run: |
-          Install-Package IronPython -Version ${{ matrix.ironpython-version }}
+          dotnet add package IronPython --version ${{ matrix.ironpython-version }}
           ipy -m ensurepip --user
       
       - name: Run acceptance tests
