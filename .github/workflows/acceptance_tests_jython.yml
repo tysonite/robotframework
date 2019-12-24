@@ -43,7 +43,7 @@ jobs:
 
       - name: Install wget
         run: |
-          choco install wget -y --no-progress
+          Install-Package WGETWindows -Version 1.11.4
         if: runner.os == 'Windows'
 
       - name: Setup Jython ${{ matrix.jython-version }}
