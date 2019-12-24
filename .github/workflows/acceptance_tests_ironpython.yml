@@ -10,7 +10,7 @@ jobs:
       matrix:
         os: [ 'windows-latest' ]
         ironpython-version: [ '2.7.9', '2.7.10-candidate1' ]
-        dotnet: [ '2.0' ]
+        dotnet: [ '2.0.3' ]
 
     runs-on: ${{ matrix.os }}
 
