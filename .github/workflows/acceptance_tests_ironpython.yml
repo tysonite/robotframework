@@ -35,9 +35,6 @@ jobs:
       
       - name: Run acceptance tests
         run: |
-          ipy -m pip install virtualenv
-          ipy -m virtualenv --always-copy ipy_venv
-          ipy_venv\Scripts\activate
           ipy -m pip install --user -r atest/requirements.txt
           chcp 850
           python atest/run.py ipy --exclude no-ci atest/robot
