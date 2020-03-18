@@ -1,0 +1,76 @@
+name: Acceptance tests (IronPython)
+
+on: [push, pull_request]
+
+jobs:
+
+  test_using_ironpython:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'windows-latest' ]
+        ironpython-version: [ '2.7.9' ]
+
+    runs-on: ${{ matrix.os }}
+
+    name: IronPython ${{ matrix.ironpython-version }} on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python 3.6
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.6.x'
+          architecture: 'x64'
+
+      - name: Setup IronPython ${{ matrix.ironpython-version }}
+        run: |
+          choco install ironpython -y --no-progress --version ${{ matrix.ironpython-version }}
+          ipy -m ensurepip --user
+      
+      - name: Run acceptance tests
+        run: |
+          ipy -m pip install --user -r atest/requirements.txt
+          chcp 850
+          python atest/run.py ipy --exclude no-ci atest/robot
+
+      - name: Delete output.xml (on Win)
+        run: |
+          Get-ChildItem atest/results -Include output.xml -Recurse | Remove-Item
+        if: always() && runner.os == 'Windows'
+      - name: Delete output.xml (on Unix-like)
+        run: |
+          find atest/results -type f -name 'output.xml' -exec rm {} +
+        if: always() && runner.os != 'Windows'
+
+      - name: Archive acceptances test results
+        uses: actions/upload-artifact@v1
+        with:
+          name: at-results-ipy-${{ matrix.ironpython-version }}-${{ matrix.os }}
+          path: atest/results
+        if: always() && job.status == 'failure'
+
+      - name: Upload results
+        run: |
+          echo '<html><head><meta http-equiv = "refresh" content =" 0 ; url = /report.html"></head></html>' > atest/results/index.html
+          zip -r -j site.zip atest/results > no_output 2>&1
+          curl -s -H "Content-Type: application/zip" -H "Authorization: Bearer ${{ secrets.NETLIFY_TOKEN }}" --data-binary "@site.zip" https://api.netlify.com/api/v1/sites > response.json
+          echo "::set-env name=REPORT_URL::$(cat response.json|python -c "import sys, json; print('https://' + json.load(sys.stdin)['subdomain'] + '.netlify.com')")"
+          echo "::set-env name=JOB_STATUS::$(python -c "print('${{ job.status }}'.lower())")"
+        if: always() && job.status == 'failure'
+
+      - uses: octokit/request-action@57ec46afcc4c58c813af3afe67e57ced1ea9f165
+        name: Update status with Github Status API
+        id: update_status
+        with:
+          route: POST /repos/:repository/statuses/:sha
+          repository: ${{ github.repository }}
+          sha: ${{ github.sha }}
+          state: "${{env.JOB_STATUS}}"
+          target_url: "${{env.REPORT_URL}}"
+          description: "Link to test report."
+          context: at-results-ironpython-${{ matrix.ironpython-version }}-${{ matrix.os }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.STATUS_UPLOAD_TOKEN }}
+        if: always() && job.status == 'failure'
