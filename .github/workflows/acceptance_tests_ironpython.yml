@@ -1,5 +1,9 @@
 name: Acceptance tests (IronPython)
 
+#on:
+#  schedule:
+#    - cron: '0 4-23/12 * * *'
+
 on: [push, pull_request]
 
 jobs:
