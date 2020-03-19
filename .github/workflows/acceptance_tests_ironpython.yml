@@ -37,7 +37,7 @@ jobs:
         run: |
           ipy -m pip install --user pyyaml==5.2
           ipy -m pip install --user enum34
-          ipy -m pip install --user pillow
+          ipy -m pip install --user pillow==5.4
           chcp 850
           python atest/run.py ipy --exclude no-ci atest/robot
 
