@@ -54,12 +54,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '1.8' ]
-        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
-        jython-version: [ '2.7.1' ]
+        java: [ '1.8', '11' ]
+        os: [ 'ubuntu-latest', 'windows-latest' ]
+        jython-version: [ '2.7.1', '2.7.2' ]
         include:
           - os: windows-latest
             set_codepage: chcp 850
+        exclude:
+          - java: '11'
+            jython-version: '2.7.1'
 
     runs-on: ${{ matrix.os }}
 
