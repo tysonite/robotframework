@@ -108,6 +108,7 @@ jobs:
           tmp=`python -c "import tempfile; print(tempfile.gettempdir())"`
           tmp=$tmp"/robottests"
           cp -R $tmp atest/results
+        if: always() && job.status == 'failure'
 
       - name: Archive acceptances test results
         uses: actions/upload-artifact@v1.0.0
