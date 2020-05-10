@@ -25,8 +25,6 @@ jobs:
         include:
           - os: ubuntu-latest
             set_display: export DISPLAY=:99; Xvfb :99 -screen 0 1024x768x24 -ac -noreset & sleep 3
-          - os: windows-latest
-            set_codepage: chcp 850
         exclude:
           - os: windows-latest
             python-version: 'pypy2'
@@ -103,7 +101,7 @@ jobs:
           ${{ env.ATEST_PYTHON }} -m pip install -r atest/requirements-run.txt
           ${{ matrix.set_codepage }}
           ${{ matrix.set_display }}
-          ${{ env.ATEST_PYTHON }} atest/run.py ${{ env.BASE_PYTHON }} --exclude no-ci atest/robot/running/timeouts_with_logging.robot
+          q=0; while [[ q -lt 3 ]]; do ((q++)); ${{ env.ATEST_PYTHON }} atest/run.py ${{ env.BASE_PYTHON }} --exclude no-ci atest/robot/running/timeouts_with_logging.robot; done
 
       - name: Delete output.xml (on Win)
         run: |
