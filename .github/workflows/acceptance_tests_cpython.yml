@@ -101,18 +101,7 @@ jobs:
           python -m pip install -r atest/requirements.txt
           ${{ env.ATEST_PYTHON }} -m pip install --upgrade pip
           ${{ env.ATEST_PYTHON }} -m pip install -r atest/requirements-run.txt
-          ${{ matrix.set_codepage }}
           q=0; while [[ q -lt 1000 ]]; do ((q++)); ${{ env.ATEST_PYTHON }} atest/run.py ${{ env.BASE_PYTHON }} --exclude no-ci atest/robot/running/timeouts_with_logging.robot; done
-
-      - name: Delete output.xml (on Win)
-        run: |
-          Get-ChildItem atest/results -Include output.xml -Recurse | Remove-Item
-        if: always() && runner.os == 'Windows'
-
-      - name: Delete output.xml (on Unix-like)
-        run: |
-          find atest/results -type f -name 'output.xml' -exec rm {} +
-        if: always() && runner.os != 'Windows'
 
       - name: Archive acceptances test results
         uses: actions/upload-artifact@v1.0.0
