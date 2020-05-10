@@ -21,8 +21,10 @@ def _log_a_lot(info):
     msg = MSG
     sleep = time.sleep
     current = time.time
+    info('before while')
     end = current() + 1
     while current() < end:
         info(msg)
         sleep(0)    # give time for other threads
+    info('after while')
     raise AssertionError('Execution should have been stopped by timeout.')
