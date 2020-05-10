@@ -1,4 +1,4 @@
-name: Acceptance tests (CPython + PyPy) 
+name: Acceptance tests (CPython + PyPy)
 
 on:
   push:
