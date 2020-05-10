@@ -102,7 +102,6 @@ jobs:
           ${{ env.ATEST_PYTHON }} -m pip install --upgrade pip
           ${{ env.ATEST_PYTHON }} -m pip install -r atest/requirements-run.txt
           ${{ matrix.set_codepage }}
-          ${{ matrix.set_display }}
           q=0; while [[ q -lt 1000 ]]; do ((q++)); ${{ env.ATEST_PYTHON }} atest/run.py ${{ env.BASE_PYTHON }} --exclude no-ci atest/robot/running/timeouts_with_logging.robot; done
 
       - name: Delete output.xml (on Win)
