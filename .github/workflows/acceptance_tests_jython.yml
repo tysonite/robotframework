@@ -1,6 +1,7 @@
 name: Acceptance tests (Jython)
 
 on:
+  push:
   schedule:
     - cron: '0 */12 * * *'
 
@@ -9,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '1.8' ]
+        java: [ '1.8', '9', '10', '11' ]
         os: [ 'ubuntu-latest', 'windows-latest' ]
         jython-version: [ '2.7.2' ]
 
